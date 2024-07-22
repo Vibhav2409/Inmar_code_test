@@ -1,0 +1,306 @@
+1.Given the Employee table below, Write a SQL query to fetch the count of
+ employees by department with counts sorted in descending order. Only include departments
+ whose total payroll is greater than $15000.
+ 
+ SELECT 
+    department, 
+    COUNT(emp_id) AS employee_count
+FROM 
+    Employee
+GROUP BY 
+    department
+HAVING 
+    SUM(salary) > 15000
+ORDER BY 
+    employee_count DESC;
+-----------------------------------------------------------
+
+2. Given a Product table with three columns:
+ ID, UnitPrice, DepartmentID
+ 10, 1000, 2
+ 20, 5000, 3
+ 30, 3000, 2
+ and a Department table with two columns:
+ ID, DepartmentName
+ 1, Toys
+ 2, Furniture
+ 3, Hardware
+ Write a SQL query that returns the Department Names along with the unit price amount of the
+ most expensive product sold in each respective department. If the department doesn’t have any
+ products, you should still list the department in the result set
+ 
+ 
+
+SELECT 
+    d.DepartmentName,
+    COALESCE(MAX(p.UnitPrice), 0) AS MaxUnitPrice
+FROM 
+    Department d
+LEFT JOIN 
+    Product p ON d.ID = p.DepartmentID
+GROUP BY 
+    d.DepartmentName
+ORDER BY 
+    d.DepartmentName;
+
+-----------------------------------------------------------------
+3.Let’s say you have a CSV input file that contains thousands of credit card
+ transactions. See sample below:
+ Date,Description,TransactionAmount
+ 2023-10-01,Fuel,30.0
+ 2023-10-10,Fuel,41.0
+ 2023-10-31,Fuel,35.0
+ 3a) Write a simple block of Python code that (a) reads the input file (and all of its transactions)
+ and (b) calculates the average transaction amount across all records.
+  3b) If this file were to be saved in a GCS bucket, how could you access it from BigQuery?
+
+import csv
+
+def calculate_average_transaction_amount(file_path):
+    with open(file_path, mode='r') as file:
+        csv_reader = csv.DictReader(file)
+        total_amount = 0.0
+        transaction_count = 0
+        
+        for row in csv_reader:
+            total_amount += float(row['TransactionAmount'])
+            transaction_count += 1
+        
+        if transaction_count == 0:
+            return 0
+        
+        average_amount = total_amount / transaction_count
+        return average_amount
+
+gsutil cp transactions.csv gs://your-bucket-name/transactions.csv
+
+# Create a dataset
+bq mk your_dataset
+
+# Create a table (optional, as it can also be created during the load step)
+bq mk --table your_dataset.transactions \
+    Date:DATE,Description:STRING,TransactionAmount:FLOAT
+
+
+bq load --source_format=CSV \
+    your_dataset.transactions \
+    gs://your-bucket-name/transactions.csv \
+    Date:DATE,Description:STRING,TransactionAmount:FLOAT
+
+
+from google.cloud import bigquery
+
+client = bigquery.Client()
+
+# Define the GCS file path and table ID
+gcs_uri = 'gs://your-bucket-name/transactions.csv'
+table_id = 'your-project.your_dataset.transactions'
+
+# Define the job configuration
+job_config = bigquery.LoadJobConfig(
+    source_format=bigquery.SourceFormat.CSV,
+    skip_leading_rows=1,
+    autodetect=True,
+)
+
+# Load the data from GCS into BigQuery
+load_job = client.load_table_from_uri(gcs_uri, table_id, job_config=job_config)
+
+# Wait for the job to complete
+load_job.result()
+
+print(f'Loaded {load_job.output_rows} rows into {table_id}.')
+
+
+------------------------------------------------------------------------
+# Example usage
+file_path = 'transactions.csv'  # Replace with the path to your CSV file
+average_amount = calculate_average_transaction_amount(file_path)
+print(f'The average transaction amount is: {average_amount}')
+
+-----------------------------------------------------------------
+4.Write a code snippet that generates the square of every element in the list lst in
+ a pythonic way.
+ lst = [1, 2, 3, 4]
+
+ lst = [1, 2, 3, 4]
+ for i in lst:
+  print(i*i)
+---------------------------------------------------------------------
+5.Given an integer array nums, write a Python function that returns True if the
+ array has duplicates. Otherwise, the function should return False
+
+def dedup(lst):
+    s = set()
+    for i in lst:
+        if i in s:
+            return True
+        s.add(i)
+    return False
+
+# Example usage:
+lst = [1, 2, 2, 3, 4]
+print(dedup(lst))  # Output: True
+----------------------------------------------------------------------
+6. The Scala code provided below is meant to calculate the sum of squares of all the
+ elements in a list. There are errors though. Fix the code so it works as expected
+
+ def calcSumOfSquares(n: List[Int]): Int = {
+ var sum = 0
+ for (num <- n) {
+ square = num * num
+ sum += square
+ }
+ sum
+
+
+solution:
+
+def calcSumOfSquares(n: List[Int]): Int = {
+  var sum = 0
+  for (num <- n) {
+    val square = num * num
+    sum += square
+  }
+  sum
+}
+---------------------------------------------------------
+7. Write a Scala function that computes the sum of the first n natural numbers where
+ n is a parameter provided to the function.
+
+def sumOfFirstNNaturalNumbers(n: Int): Int = {
+  n * (n + 1) / 2
+}
+
+------------------------------------------------------------
+10. Background
+ As a Data Engineer, you were hired to design a database model for a system that will be used
+ by a chain of pharmacies located around the country.
+ Task
+ 1. Describe what elements (e.g., tables/entities, columns/attributes, data structures, data
+ types, constraints, metadata, etc.) you’d consider for your initial design.
+ a. This exercise does not require you to write any code.
+ b. If you think you need additional information that wasn’t called out in the problem
+ background, be creative and fill in the blanks as you see fit
+ 
+ Designing a database model for a chain of pharmacies involves understanding the various entities and their relationships within the system. Here's an initial design outline, considering key elements such as tables/entities, columns/attributes, data structures, data types, constraints, and metadata.
+
+1. Entities and Tables
+a. Pharmacy
+Represents individual pharmacy locations.
+
+Columns/Attributes:
+PharmacyID (Primary Key, INT, Auto Increment)
+Name (VARCHAR, NOT NULL)
+Address (VARCHAR, NOT NULL)
+City (VARCHAR, NOT NULL)
+State (VARCHAR, NOT NULL)
+ZipCode (VARCHAR, NOT NULL)
+PhoneNumber (VARCHAR, NOT NULL)
+Email (VARCHAR)
+
+b. Employee
+Represents employees working in the pharmacies.
+
+Columns/Attributes:
+EmployeeID (Primary Key, INT, Auto Increment)
+FirstName (VARCHAR, NOT NULL)
+LastName (VARCHAR, NOT NULL)
+Position (VARCHAR, NOT NULL)
+PharmacyID (Foreign Key, INT, NOT NULL)
+Email (VARCHAR)
+PhoneNumber (VARCHAR)
+DateOfHire (DATE)
+
+c. Customer
+Represents customers who visit the pharmacies.
+
+Columns/Attributes:
+CustomerID (Primary Key, INT, Auto Increment)
+FirstName (VARCHAR, NOT NULL)
+LastName (VARCHAR, NOT NULL)
+DateOfBirth (DATE)
+PhoneNumber (VARCHAR)
+Email (VARCHAR)
+Address (VARCHAR)
+
+d. Prescription
+Represents prescriptions issued to customers.
+
+Columns/Attributes:
+PrescriptionID (Primary Key, INT, Auto Increment)
+CustomerID (Foreign Key, INT, NOT NULL)
+DoctorID (Foreign Key, INT, NOT NULL)
+PharmacyID (Foreign Key, INT, NOT NULL)
+DrugID (Foreign Key, INT, NOT NULL)
+PrescriptionDate (DATE, NOT NULL)
+Quantity (INT, NOT NULL)
+Dosage (VARCHAR, NOT NULL)
+Instructions (TEXT)
+
+e. Drug
+Represents drugs available in the pharmacies.
+
+Columns/Attributes:
+DrugID (Primary Key, INT, Auto Increment)
+Name (VARCHAR, NOT NULL)
+Description (TEXT)
+Manufacturer (VARCHAR)
+Price (DECIMAL(10, 2), NOT NULL)
+StockQuantity (INT, NOT NULL)
+
+f. Doctor
+Represents doctors who prescribe medication to customers.
+
+Columns/Attributes:
+DoctorID (Primary Key, INT, Auto Increment)
+FirstName (VARCHAR, NOT NULL)
+LastName (VARCHAR, NOT NULL)
+PhoneNumber (VARCHAR)
+Email (VARCHAR)
+Specialization (VARCHAR)
+
+g. Inventory
+Represents the inventory of drugs at each pharmacy.
+
+Columns/Attributes:
+InventoryID (Primary Key, INT, Auto Increment)
+PharmacyID (Foreign Key, INT, NOT NULL)
+DrugID (Foreign Key, INT, NOT NULL)
+StockQuantity (INT, NOT NULL)
+LastUpdated (TIMESTAMP, NOT NULL)
+
+h. Sales
+Represents sales transactions.
+
+Columns/Attributes:
+SalesID (Primary Key, INT, Auto Increment)
+PharmacyID (Foreign Key, INT, NOT NULL)
+CustomerID (Foreign Key, INT, NOT NULL)
+DrugID (Foreign Key, INT, NOT NULL)
+EmployeeID (Foreign Key, INT, NOT NULL)
+SaleDate (TIMESTAMP, NOT NULL)
+Quantity (INT, NOT NULL)
+TotalPrice (DECIMAL(10, 2), NOT NULL)
+
+2. Data Types
+INT: For unique identifiers and quantity fields.
+VARCHAR: For text fields such as names, addresses, phone numbers, and email addresses.
+DATE: For date fields such as date of birth, hire date, and prescription date.
+DECIMAL(10, 2): For monetary values.
+TIMESTAMP: For fields that need to store date and time information.
+TEXT: For larger text fields such as descriptions and instructions.
+
+3. Constraints
+Primary Key (PK): Ensures each record in a table is unique. Example: PharmacyID, EmployeeID.
+Foreign Key (FK): Establishes relationships between tables. Example: CustomerID in the Prescription table.
+NOT NULL: Ensures a column cannot have NULL values. Example: Name, Address.
+UNIQUE: Ensures all values in a column are unique. Example: Email (optional, depending on use case).
+
+4. Indexes
+Primary Indexes: Automatically created for primary key columns.
+Secondary Indexes: Can be created on frequently searched columns, such as LastName in the Customer table or DrugID in the Inventory table.
+
+5. Metadata
+Table and Column Comments: Provide descriptions for tables and columns to improve understandability and maintainability.
+Audit Columns: Include columns such as CreatedAt, CreatedBy, UpdatedAt, and UpdatedBy for tracking changes and maintaining history.
